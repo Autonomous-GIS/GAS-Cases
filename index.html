@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GAS - Offline Conversation Snapshots</title>
+<style>
+  :root {
+    --bg: #2a2a2e;
+    --panel: #353539;
+    --panel-hover: #3f3f44;
+    --border: #45454b;
+    --border-strong: #54545a;
+    --text: #ececec;
+    --muted: #aeaeb6;
+    --accent: #d6b878;
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); }
+  body {
+    margin: 0;
+    color: var(--text);
+    font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); }
+  a:hover { color: #e3c587; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 80px 28px 96px; }
+
+  header { margin-bottom: 56px; }
+  .eyebrow {
+    font-size: 1.0rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+  h1 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-weight: 400;
+    font-size: 2.0rem;
+    line-height: 1.15;
+    margin: 0 0 18px;
+    letter-spacing: -0.01em;
+  }
+  .lede {
+    color: #c5c5cc;
+    font-size: 1.04rem;
+    max-width: 64ch;
+    margin: 0;
+  }
+
+  section { margin-top: 64px; }
+  .section-title {
+    font-family: Georgia, "Times New Roman", serif;
+    font-weight: 400;
+    font-size: 1.4rem;
+    margin: 0 0 20px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+  }
+
+  .cases { display: grid; gap: 16px; grid-template-columns: 1fr; }
+  @media (min-width: 720px) { .cases { grid-template-columns: repeat(3, 1fr); } }
+  .case {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 22px 20px 18px;
+    transition: background .15s, border-color .15s, transform .15s;
+  }
+  .case:hover { background: var(--panel-hover); border-color: var(--border-strong); transform: translateY(-1px); }
+  .case .num { font-size: .72rem; letter-spacing: .2em; color: var(--muted); text-transform: uppercase; }
+  .case h3 {
+    margin: 8px 0 8px;
+    font-family: Georgia, "Times New Roman", serif;
+    font-weight: 400;
+    font-size: 1.1rem;
+    color: var(--text);
+  }
+  .case p { margin: 0; color: var(--muted); font-size: .92rem; }
+  .case .open { display: inline-block; margin-top: 14px; font-size: .85rem; color: var(--accent); }
+
+  .videos { display: grid; gap: 24px; grid-template-columns: 1fr; }
+  @media (min-width: 860px) { .videos { grid-template-columns: repeat(3, 1fr); } }
+  .video figcaption {
+    font-size: .85rem;
+    color: var(--muted);
+    margin-top: 8px;
+    letter-spacing: .04em;
+  }
+  .video-frame {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #050505;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    text-decoration: none;
+    transition: border-color .15s, transform .15s;
+  }
+  .video-frame:hover { border-color: var(--border-strong); transform: translateY(-1px); }
+  .video-frame img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .video-frame .play {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,.55) 100%);
+    transition: background .15s;
+  }
+  .video-frame:hover .play { background: linear-gradient(180deg, rgba(0,0,0,.1) 0%, rgba(0,0,0,.65) 100%); }
+  .video-frame .play svg {
+    width: 64px; height: 64px;
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,.5));
+    opacity: .92;
+    transition: transform .15s, opacity .15s;
+  }
+  .video-frame:hover .play svg { transform: scale(1.06); opacity: 1; }
+
+  .resources { display: grid; gap: 14px; grid-template-columns: 1fr; }
+  @media (min-width: 720px) { .resources { grid-template-columns: repeat(2, 1fr); } }
+  .resource {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    padding: 14px 18px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--panel);
+    text-decoration: none;
+    color: inherit;
+    transition: border-color .15s, background .15s;
+  }
+  .resource:hover { border-color: var(--border-strong); background: var(--panel-hover); }
+  .resource .label { font-size: 1rem; }
+  .resource .meta { color: var(--muted); font-size: .85rem; }
+
+  footer {
+    margin-top: 80px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: .85rem;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  footer a { color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
+  footer a:hover { color: var(--text); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Geospatial Agentic Services Framework (GAS)</div>
+    <h1> Conversation snapshots from the prototype GAS platform.</h1>
+    <!-- <p class="lede"> -->
+      <!-- Each case below is a self-contained, read-only bundle - chat transcript, workflow cards, research plan, figures, and the resulting manuscript - captured from the AGSI pipeline. No server, no API keys, nothing to install. </p> -->
+  </header>
+
+  <section>
+    <h2 class="section-title">Cases</h2>
+    <div class="cases">
+      <a class="case" href="UseCase1/index.html">
+        <div class="num">Case 1</div>
+        <h3>Multi-step terrain analysis task for Richland County, South Carolina</h3>
+        <p>Download the DEM for Richland County, South Carolina, clip it to the Richland County boundary, randomly generate 100 points within the county, extract elevation values for those points, create a histogram of the sampled elevations, and display the generated points on top of the clipped DEM.</p>
+        <span class="open">Open snapshot &rarr;</span>
+      </a>
+      <a class="case" href="UseCase2/index.html">
+        <div class="num">Case 2</div>
+        <h3>A parcel-level accessibility analysis task for Centre County, Pennsylvania</h3>
+        <p>For parcels in Centre County, Pennsylvania, calculate the distance (in kilometers) from each parcel to its nearest hospital, considering only hospitals located within the county boundary. Then, apply K-means clustering to group the parcels into five classes based on these distances. Finally, create a map displaying the parcels colored by cluster, along with hospital locations.</p>
+        <span class="open">Open snapshot &rarr;</span>
+      </a>
+      <a class="case" href="UseCase3/index.html">
+        <div class="num">Case 3</div>
+        <h3>County-level choropleth map of 2021 population for the contiguous United States</h3>
+        <p>Create a county-level choropleth map showing the 2021 population for the contiguous United States. Use a quantile classification scheme (e.g., 5 classes) to group the population values. The map must be in lambert conformal conic.</p>
+        <span class="open">Open snapshot &rarr;</span>
+      </a>
+    </div>
+  </section>
+
+
+
+  <!-- <section>
+    <!-- <h2 class="section-title">Video demos</h2>
+    <div class="videos"> -->
+      <!--
+        <!-- Each tile opens the video on YouTube in a new tab.
+        Thumbnail comes from img.youtube.com/vi/<ID>/hqdefault.jpg. -->
+      
+      <!-- <figure class="video">
+        <a class="video-frame" href="https://www.youtube.com/watch?v=u0HePpi4IZE" target="_blank" rel="noopener" aria-label="Watch Case 1 demo on YouTube">
+          <img src="https://img.youtube.com/vi/u0HePpi4IZE/hqdefault.jpg" alt="Case 1 demo thumbnail" loading="lazy">
+          <div class="play">
+            <svg viewBox="0 0 68 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55C3.97 2.33 2.27 4.81 1.48 7.74 0 13.05 0 24 0 24s0 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C68 34.95 68 24 68 24s0-10.95-1.48-16.26z" fill="#f00"/>
+              <path d="M45 24 27 14v20" fill="#fff"/>
+            </svg>
+          </div>
+        </a>
+        <figcaption>Case 1 - walkthrough</figcaption>
+      </figure> -->
+      <!-- <figure class="video">
+        <a class="video-frame" href="https://www.youtube.com/watch?v=3ewtgUbmo1w" target="_blank" rel="noopener" aria-label="Watch Case 2 demo on YouTube">
+          <img src="https://img.youtube.com/vi/3ewtgUbmo1w/hqdefault.jpg" alt="Case 2 demo thumbnail" loading="lazy">
+          <div class="play">
+            <svg viewBox="0 0 68 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55C3.97 2.33 2.27 4.81 1.48 7.74 0 13.05 0 24 0 24s0 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C68 34.95 68 24 68 24s0-10.95-1.48-16.26z" fill="#f00"/>
+              <path d="M45 24 27 14v20" fill="#fff"/>
+            </svg>
+          </div>
+        </a>
+        <figcaption>Case 2 - walkthrough</figcaption>
+      </figure> -->
+      <!-- <figure class="video">
+        <a class="video-frame" href="https://www.youtube.com/watch?v=vOeFTgkdw4I" target="_blank" rel="noopener" aria-label="Watch Case 3 demo on YouTube">
+          <img src="https://img.youtube.com/vi/vOeFTgkdw4I/hqdefault.jpg" alt="Case 3 demo thumbnail" loading="lazy">
+          <div class="play">
+            <svg viewBox="0 0 68 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55C3.97 2.33 2.27 4.81 1.48 7.74 0 13.05 0 24 0 24s0 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C68 34.95 68 24 68 24s0-10.95-1.48-16.26z" fill="#f00"/>
+              <path d="M45 24 27 14v20" fill="#fff"/>
+            </svg>
+          </div>
+        </a>
+        <figcaption>Case 3 - walkthrough</figcaption>
+      </figure>
+    </div>
+  </section> -->
+
+
+
+
+
+
+  <!-- <section>
+    <h2 class="section-title">Materials</h2>
+    <div class="resources">
+      <a class="resource" href="Generated Manuscripts/index.html">
+        <span class="label">Generated Manuscripts</span>
+        <span class="meta">PDFs &rarr;</span>
+      </a>
+      <a class="resource" href="Figures/index.html">
+        <span class="label">Figures</span>
+        <span class="meta">Gallery &rarr;</span>
+      </a>
+      <a class="resource" href="Sessions/index.html">
+        <span class="label">Session bundles</span>
+        <span class="meta">Downloads &rarr;</span>
+      </a>
+      <a class="resource" href="README.md">
+        <span class="label">README</span>
+        <span class="meta">Project notes &rarr;</span>
+      </a>
+    </div>
+  </section> -->
+
+  <footer>
+    <span>GAS &middot; Geospatial Agentic Services Framework</span>
+    <!-- <span><a href="https://github.com/AutonomousGIS-AGSI/AGSI">View on GitHub</a></span> -->
+  </footer>
+
+</div>
+</body>
+</html>
